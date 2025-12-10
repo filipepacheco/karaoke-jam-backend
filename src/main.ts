@@ -3,44 +3,46 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
-export async function bootstrap() {
+async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   });
 
-    // Enable CORS
-    app.enableCors({
-        origin: function (origin, callback) {
-          // Allow all origins in development
-          if (process.env.NODE_ENV === 'development') {
-            callback(null, true);
-          } else {
-            // In production, specify allowed origins
-            const allowedOrigins = [
-              'https://yourdomain.com',
-              'https://www.yourdomain.com',
-                'http://localhost:3000',
-                'https://localhost:3000',
-                'http://localhost:5174',
-                'https://localhost:5174'
-            ];
-            if (!origin || allowedOrigins.includes(origin)) {
-              callback(null, true);
-            } else {
-              callback(new Error('CORS not allowed'));
-            }
-          }
-        },
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
-    });
+  // Enable CORS
+  app.enableCors({
+    origin: function (origin, callback) {
+      // Allow all origins in development
+      if (process.env.NODE_ENV === 'development') {
+        callback(null, true);
+      } else {
+        // In production, specify allowed origins
+        const allowedOrigins = [
+          'https://yourdomain.com',
+          'https://www.yourdomain.com',
+          'http://localhost:3000',
+          'https://localhost:3000',
+          'http://localhost:5174',
+          'https://localhost:5174',
+        ];
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('CORS not allowed'));
+        }
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
   // Global validation pipe
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
 
   // Swagger documentation
   const config = new DocumentBuilder()
@@ -62,17 +64,12 @@ export async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  return app;
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+  console.log(`🚀 Karaoke Jam API running on: http://localhost:${port}`);
+  console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
 }
 
-// For local development
-if (require.main === module) {
-  bootstrap().then(app => {
-    const port = process.env.PORT || 3001;
-    app.listen(port);
-    console.log(`🚀 Karaoke Jam API running on: http://localhost:${port}`);
-    console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
-  });
-}
+bootstrap();
 
 

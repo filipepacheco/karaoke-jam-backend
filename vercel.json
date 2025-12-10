@@ -1,24 +1,9 @@
 {
-  "version": 2,
   "buildCommand": "npx prisma generate && npm run build",
   "outputDirectory": "dist",
+  "framework": "nestjs",
   "env": {
     "NODE_ENV": "production"
-  },
-  "builds": [
-    {
-      "src": "api/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "15mb"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.ts"
-    }
-  ]
+  }
 }
 
