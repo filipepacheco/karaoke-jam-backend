@@ -1,5 +1,19 @@
 {
   "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "builds": [
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node",
+      "config": {
+        "maxLambdaSize": "15mb"
+      }
+    }
+  ],
   "routes": [
     {
       "src": "/(.*)",
