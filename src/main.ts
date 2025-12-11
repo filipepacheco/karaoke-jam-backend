@@ -15,19 +15,33 @@ async function bootstrap() {
       if (process.env.NODE_ENV === 'development') {
         callback(null, true);
       } else {
-        // In production, specify allowed origins
+        // In production, allow:
+        // 1. Requests with no origin (direct API calls, curl, postman)
+        // 2. localhost variants (for testing)
+        // 3. Vercel deployments (*.vercel.app)
+        // 4. Your frontend domain
         const allowedOrigins = [
-          'https://yourdomain.com',
-          'https://www.yourdomain.com',
           'http://localhost:3000',
           'https://localhost:3000',
           'http://localhost:5174',
           'https://localhost:5174',
+          'http://127.0.0.1:3000',
+          'https://127.0.0.1:3000',
+          'http://127.0.0.1:5174',
+          'https://127.0.0.1:5174',
         ];
-        if (!origin || allowedOrigins.includes(origin)) {
+
+        // Allow any vercel.app domain
+        if (!origin) {
+          callback(null, true);
+        } else if (origin.includes('vercel.app')) {
+          callback(null, true);
+        } else if (allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
-          callback(new Error('CORS not allowed'));
+          // In production, we still reject but log it
+          console.warn(`CORS rejected origin: ${origin}`);
+          callback(null, false);
         }
       }
     },
