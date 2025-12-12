@@ -11,13 +11,13 @@ async function bootstrap() {
   // Handle preflight OPTIONS requests BEFORE everything else
   // This ensures CORS headers are sent immediately without redirects
   app.use((req, res, next) => {
+    const origin = req.get('origin');
+
     // Log for debugging
     if (req.method === 'OPTIONS') {
-      console.log(`[CORS Preflight] ${req.method} ${req.path} from ${req.get('origin')}`);
+      console.log(`[CORS Preflight] OPTIONS ${req.path} from origin: ${origin}`);
     }
 
-    // Set CORS headers for preflight requests
-    const origin = req.get('origin');
     const allowedOrigins = [
       'http://localhost:3000',
       'https://localhost:3000',
@@ -27,7 +27,12 @@ async function bootstrap() {
       'https://127.0.0.1:3000',
       'http://127.0.0.1:5174',
       'https://127.0.0.1:5174',
+      // Vercel frontends
+      'https://karaoke-jam-frontend.vercel.app',
       'https://lets-jam-web.vercel.app',
+      // Custom domains
+      'https://jamapp.com.br',
+      'https://www.jamapp.com.br',
     ];
 
     const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
@@ -47,27 +52,25 @@ async function bootstrap() {
     res.header('X-Frame-Options', 'DENY');
     res.header('X-XSS-Protection', '1; mode=block');
 
-    // Handle preflight requests immediately
+    // Handle preflight OPTIONS requests immediately - MUST return 204, not 200
     if (req.method === 'OPTIONS') {
-      console.log(`[CORS] Preflight request allowed`);
-      return res.sendStatus(200);
+      console.log(`[CORS] Preflight request allowed - responding with 204`);
+      return res.sendStatus(204);
     }
 
     next();
   });
 
-  // Enable CORS with NestJS enableCors as a secondary layer
+  // Enable CORS as a secondary layer for all actual requests
   app.enableCors({
     origin: function (origin, callback) {
-      // Development: Allow all origins
-      if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+      const isDevelopment = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
+      if (isDevelopment) {
         callback(null, true);
         return;
       }
 
-      // Production: Allow specific origins
       const allowedOrigins = [
-        // localhost variants
         'http://localhost:3000',
         'https://localhost:3000',
         'http://localhost:5174',
@@ -76,29 +79,26 @@ async function bootstrap() {
         'https://127.0.0.1:3000',
         'http://127.0.0.1:5174',
         'https://127.0.0.1:5174',
-        // Vercel frontend
+        // Vercel frontends
+        'https://karaoke-jam-frontend.vercel.app',
         'https://lets-jam-web.vercel.app',
+        // Custom domains
+        'https://jamapp.com.br',
+        'https://www.jamapp.com.br',
       ];
 
-      // No origin (direct API calls, mobile apps, etc.)
-      if (!origin) {
-        callback(null, true);
-        return;
-      }
-
-      // Check if origin is allowed or is a *.vercel.app domain
-      if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
         callback(null, true);
       } else {
-        console.warn(`CORS rejected origin: ${origin}`);
+        console.warn(`[CORS] Origin rejected: ${origin}`);
         callback(new Error('CORS not allowed'));
       }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['Content-Type', 'Authorization'],
-    maxAge: 86400, // 24 hours
+    maxAge: 86400,
   });
 
 
