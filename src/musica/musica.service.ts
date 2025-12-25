@@ -1,14 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateMusicDto } from './dto/create-musica.dto';
-import { UpdateMusicDto } from './dto/update-musica.dto';
-import { WebsocketGateway } from '../websocket/websocket.gateway';
+import {Injectable} from '@nestjs/common';
+import {PrismaService} from '../prisma/prisma.service';
+import {CreateMusicDto} from './dto/create-musica.dto';
+import {UpdateMusicDto} from './dto/update-musica.dto';
 
 @Injectable()
 export class MusicaService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly websocketGateway: WebsocketGateway,
   ) {}
 
   async create(createMusicDto: CreateMusicDto) {
@@ -78,7 +76,7 @@ export class MusicaService {
     }
 
     // Create the link
-    const jamMusic = await this.prisma.jamMusic.create({
+    return this.prisma.jamMusic.create({
       data: {
         jamId,
         musicId: musicaId,
@@ -88,14 +86,5 @@ export class MusicaService {
         music: true,
       },
     });
-
-    // Emit socket event
-    this.websocketGateway.emitToJam(jamId, 'music:added', {
-      jamId,
-      music: jamMusic.music,
-      jamMusic,
-    });
-
-    return jamMusic;
   }
 }

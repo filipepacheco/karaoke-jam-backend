@@ -8,7 +8,6 @@ import { MusicoModule } from './musico/musico.module';
 import { MusicaModule } from './musica/musica.module';
 import { InscricaoModule } from './inscricao/inscricao.module';
 import { EscalaModule } from './escala/escala.module';
-import { WebsocketModule } from './websocket/websocket.module';
 import { AuthModule } from './auth/auth.module';
 import { SupabaseModule } from './supabase/supabase.module';
 
@@ -25,7 +24,6 @@ import { SupabaseModule } from './supabase/supabase.module';
     MusicaModule,
     InscricaoModule,
     EscalaModule,
-    WebsocketModule,
   ],
   controllers: [AppController],
   providers: [AppService],

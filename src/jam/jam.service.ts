@@ -1,16 +1,13 @@
-import { Injectable, BadRequestException, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateJamDto } from './dto/create-jam.dto';
 import { UpdateJamDto } from './dto/update-jam.dto';
-import { WebsocketGateway } from '../websocket/websocket.gateway';
 import * as QRCode from 'qrcode';
 
 @Injectable()
 export class JamService {
   constructor(
     private prisma: PrismaService,
-    @Inject(forwardRef(() => WebsocketGateway))
-    private websocketGateway: WebsocketGateway,
   ) {}
 
   async create(createJamDto: CreateJamDto) {
@@ -238,9 +235,6 @@ export class JamService {
       default:
         throw new BadRequestException('Invalid action');
     }
-
-    // Broadcast updated jam to all connected clients in jam room
-    this.websocketGateway.broadcastJamUpdate(jamId, updatedJam);
 
     return updatedJam;
   }

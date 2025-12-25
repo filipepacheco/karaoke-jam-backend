@@ -1,15 +1,13 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateRegistrationDto } from './dto/create-inscricao.dto';
-import { UpdateRegistrationDto } from './dto/update-inscricao.dto';
-import { RegistrationStatus } from '@prisma/client';
-import { WebsocketGateway } from '../websocket/websocket.gateway';
+import {ConflictException, Injectable, NotFoundException} from '@nestjs/common';
+import {PrismaService} from '../prisma/prisma.service';
+import {CreateRegistrationDto} from './dto/create-inscricao.dto';
+import {UpdateRegistrationDto} from './dto/update-inscricao.dto';
+import {RegistrationStatus} from '@prisma/client';
 
 @Injectable()
 export class InscricaoService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly websocketGateway: WebsocketGateway,
   ) {}
 
   async create(createRegistrationDto: CreateRegistrationDto) {
@@ -36,7 +34,7 @@ export class InscricaoService {
       throw new ConflictException('Musician already registered for this schedule');
     }
 
-    const registration = await this.prisma.registration.create({
+    return this.prisma.registration.create({
       data: {
         musicianId: createRegistrationDto.musicianId,
         jamId: schedule.jamId,
@@ -49,14 +47,6 @@ export class InscricaoService {
         schedule: true,
       },
     });
-
-    // Emit socket event to host room
-    this.websocketGateway.emitToHost(schedule.jamId, 'registration:created', {
-      jamId: schedule.jamId,
-      registration,
-    });
-
-    return registration;
   }
 
   async findByJam(jamId: string) {
@@ -122,18 +112,6 @@ export class InscricaoService {
       where: { id },
     });
 
-    // Emit to host room
-    this.websocketGateway.emitToHost(registration.jamId, 'registration:cancelled', {
-      jamId: registration.jamId,
-      registrationId: id,
-      musicianId: registration.musicianId,
-    });
-
-    // Emit to all jam users for state sync
-    this.websocketGateway.emitToJam(registration.jamId, 'live:state-sync-trigger', {
-      jamId: registration.jamId,
-      reason: 'registration_cancelled',
-    });
   }
 
   async approve(id: string) {
@@ -145,8 +123,8 @@ export class InscricaoService {
       throw new NotFoundException('Registration not found');
     }
 
-    const updated = await this.prisma.registration.update({
-      where: { id },
+    return this.prisma.registration.update({
+      where: {id},
       data: {
         status: RegistrationStatus.APPROVED,
       },
@@ -156,20 +134,6 @@ export class InscricaoService {
         schedule: true,
       },
     });
-
-    // Emit to host room
-    this.websocketGateway.emitToHost(registration.jamId, 'registration:approved', {
-      jamId: registration.jamId,
-      registration: updated,
-    });
-
-    // Emit to all jam users for state sync
-    this.websocketGateway.emitToJam(registration.jamId, 'live:state-sync-trigger', {
-      jamId: registration.jamId,
-      reason: 'registration_approved',
-    });
-
-    return updated;
   }
 
   async reject(id: string) {
@@ -181,8 +145,8 @@ export class InscricaoService {
       throw new NotFoundException('Registration not found');
     }
 
-    const updated = await this.prisma.registration.update({
-      where: { id },
+    return this.prisma.registration.update({
+      where: {id},
       data: {
         status: RegistrationStatus.REJECTED,
       },
@@ -192,20 +156,5 @@ export class InscricaoService {
         schedule: true,
       },
     });
-
-    // Emit to host room
-    this.websocketGateway.emitToHost(registration.jamId, 'registration:rejected', {
-      jamId: registration.jamId,
-      registration: updated,
-      musicianId: registration.musicianId,
-    });
-
-    // Emit to all jam users for state sync
-    this.websocketGateway.emitToJam(registration.jamId, 'live:state-sync-trigger', {
-      jamId: registration.jamId,
-      reason: 'registration_rejected',
-    });
-
-    return updated;
   }
 }
